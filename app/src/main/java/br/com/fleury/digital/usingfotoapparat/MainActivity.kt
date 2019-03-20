@@ -1,21 +1,18 @@
 package br.com.fleury.digital.usingfotoapparat
 
-import android.Manifest.permission.*
-import android.app.Activity
+import android.Manifest.permission.CAMERA
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
-import com.bumptech.glide.Glide
 import io.fotoapparat.Fotoapparat
-import io.fotoapparat.parameter.ScaleType
 import io.fotoapparat.selector.back
 import kotlinx.android.synthetic.main.activity_main.btn_capture
 import kotlinx.android.synthetic.main.activity_main.camera_view
@@ -33,7 +30,6 @@ class MainActivity : AppCompatActivity() {
   private var fotoApparat: Fotoapparat? = null
   private lateinit var photoFile: File
   private var tempURI: Uri? = null
-//  private var mCurrentPhotoPath: String? = null
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -66,7 +62,6 @@ class MainActivity : AppCompatActivity() {
 
       val photoPreview: Intent? = Intent(this, PhotoPreviewActivity::class.java)
 
-
       try {
         photoFile = createImageFile()
         val photoURI: Uri = FileProvider.getUriForFile(
@@ -76,28 +71,25 @@ class MainActivity : AppCompatActivity() {
         )
         tempURI = photoURI
 
-        fotoApparat?.takePicture()?.saveToFile(photoFile)
-
-//        val bitmap = MediaStore.Images.Media.getBitmap(this.contentResolver, photoURI)
-//        imageView.setImageBitmap(bitmap)
-//        Glide.with(this).load(mCurrentPhotoPath).into(imageView)
-
-        photoPreview?.putExtra(MediaStore.EXTRA_OUTPUT, photoURI)
-
-        startActivityForResult(photoPreview, 1)
-
+        fotoApparat?.takePicture()?.saveToFile(photoFile)?.whenAvailable {
+          photoPreview?.putExtra(MediaStore.EXTRA_OUTPUT, photoURI)
+          startActivityForResult(photoPreview, 1)
+        }
       } catch (e: IOException) {
         tempURI = null
       }
-
     }
   }
 
   override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-    if(requestCode == 1){
-      if (resultCode == Activity.RESULT_OK){
-        Uri.fromFile(File(photoFile.absolutePath))
-      }
+    if (requestCode == 1) {
+        val photoOk = data?.getBooleanExtra("photoOk", false)
+
+        if(photoOk!!){
+        //TODO Do something with image file
+        } else {
+        //TODO Delete photo and open camera again
+        }
     }
   }
 
@@ -113,7 +105,7 @@ class MainActivity : AppCompatActivity() {
     ActivityCompat.requestPermissions(this, permissions, 0)
   }
 
-  fun createFotoApparat() {
+  private fun createFotoApparat() {
     fotoApparat = Fotoapparat(context = this,
       view = camera_view,
       lensPosition = back(),

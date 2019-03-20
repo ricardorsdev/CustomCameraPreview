@@ -3,19 +3,18 @@ package br.com.fleury.digital.usingfotoapparat
 import android.app.Activity
 import android.content.Intent
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
+import android.graphics.Matrix
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
 import androidx.appcompat.app.AppCompatActivity
-import com.bumptech.glide.Glide
+import kotlinx.android.synthetic.main.activity_photo_preview.btn_cancel
+import kotlinx.android.synthetic.main.activity_photo_preview.btn_save
 import kotlinx.android.synthetic.main.activity_photo_preview.photo_preview
-import java.io.File
-import java.io.InputStream
 
 class PhotoPreviewActivity: AppCompatActivity() {
 
-  lateinit var photoUri : Uri
+  private lateinit var photoUri : Uri
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -24,24 +23,26 @@ class PhotoPreviewActivity: AppCompatActivity() {
 
     photoUri = intent.getParcelableExtra(MediaStore.EXTRA_OUTPUT)
 
-//    val imageUri = Uri.fromFile(File(imagePath))
-
-    val bitmap = MediaStore.Images.Media.getBitmap(this.contentResolver, photoUri)
-
+    var bitmap = MediaStore.Images.Media.getBitmap(this.contentResolver, photoUri)
+    bitmap = bitmap.rotate(90f)
     photo_preview.setImageBitmap(bitmap)
 
-//    Glide.with(this).load(imagePath).into(photo_preview)
+    btn_save.setOnClickListener { returnIntent(true) }
+    btn_cancel.setOnClickListener { returnIntent(false) }
 
-    photo_preview.setOnClickListener { returnIntent() }
   }
 
-  fun returnIntent(){
+  private fun returnIntent(isOk: Boolean){
     val returnIntent = Intent()
 
-    returnIntent.data = photoUri
-
+    returnIntent.putExtra("photoOk", isOk)
     setResult(Activity.RESULT_OK, returnIntent)
     finish()
+  }
+
+  private fun Bitmap.rotate(degrees: Float): Bitmap {
+    val matrix = Matrix().apply { postRotate(degrees) }
+    return Bitmap.createBitmap(this, 0, 0, width, height, matrix, true)
   }
 
 }
